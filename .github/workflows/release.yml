@@ -23,6 +23,10 @@ jobs:
         needs: create-release
         uses: ./.github/workflows/convert-voices.yml
 
+    export-models:
+        needs: create-release
+        uses: ./.github/workflows/export-models.yml
+
     build-espeak:
         needs: create-release
         uses: ./.github/workflows/build-espeak.yml
@@ -30,8 +34,8 @@ jobs:
             matrix: |
                 {"include": [
                   {"platform": "macos-14", "bin": "espeak-ng-macos-arm64.dll"},
-                  {"platform": "macos-13", "bin": "espeak-ng-macos-amd64.dll"},
-                  {"platform": "ubuntu-20.04", "bin": "espeak-ng-linux-amd64.dll"},
+                  {"platform": "macos-15-intel", "bin": "espeak-ng-macos-amd64.dll"},
+                  {"platform": "ubuntu-22.04", "bin": "espeak-ng-linux-amd64.dll"},
                   {"platform": "windows-latest", "bin": "espeak-ng-win-amd64.dll"},
                   {"platform": "windows-latest", "bin": "espeak-ng-win-arm64.dll", "extra-cmake-args": "-A ARM64"}
                 ]}

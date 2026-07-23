@@ -20,16 +20,14 @@ jobs:
               run: |
                   python -m pip install --upgrade pip
                   pip install torch --index-url https://download.pytorch.org/whl/cpu
-                  pip install requests numpy bs4
+                  pip install numpy huggingface_hub
 
             - name: Collect Kokoro voices from HuggingFace and Convert to .npy
-              run: |
-                  mkdir -p voices
-                  python ./convert_kokoro_voices.py
+              run: python ./convert_kokoro_voices.py
 
             - name: Zip and upload to release
               run: |
-                  curl -o LICENSE https://www.apache.org/licenses/LICENSE-2.0.txt
+                  curl -o voices/LICENSE https://www.apache.org/licenses/LICENSE-2.0.txt
                   zip -r voices.zip voices
                   gh release upload ${{ github.ref_name }} voices.zip --clobber
               env:

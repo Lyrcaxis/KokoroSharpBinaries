@@ -1,0 +1,39 @@
+name: Add kokoro onnx models to created release
+
+on:
+    workflow_call:
+
+jobs:
+    export-models:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Set up Python
+              uses: actions/setup-python@v4
+              with:
+                  python-version: "3.12"
+
+            - name: Install dependencies
+              run: |
+                  python -m pip install --upgrade pip
+                  pip install torch --index-url https://download.pytorch.org/whl/cpu
+                  pip install numpy transformers loguru huggingface_hub attrs onnx onnxruntime
+
+            - name: Export both Kokoro models to ONNX
+              run: |
+                  git clone --depth 1 https://github.com/hexgrad/kokoro
+                  python export_kokoro_onnx.py
+
+            - name: Upload sample wavs as artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: onnx-sample-wavs
+                  path: onnx/*.wav
+
+            - name: Upload to release
+              run: gh release upload ${{ github.ref_name }} onnx/*.onnx --clobber
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,51 +1,28 @@
-import requests, os, torch, numpy as np
-from bs4 import BeautifulSoup
+import os, shutil, torch, numpy as np
+from huggingface_hub import HfApi, hf_hub_download
 
-# Get all .md files (DOCS)
-response = requests.get('https://huggingface.co/hexgrad/Kokoro-82M/tree/main')
-soup = BeautifulSoup(response.text, 'html.parser')
+# The two Kokoro releases whose voices (and docs) we repackage, and the folders they land in
+repos = { 'hexgrad/Kokoro-82M': 'voices', 'hexgrad/Kokoro-82M-v1.1-zh': 'voices/voices-zh' }
 
-for link in soup.find_all('a', href=True):
-    if link['href'].endswith('.md?download=true'):
-        file_url = f'https://huggingface.co{link["href"]}'
-        file_name = file_url[:-14].split('/')[-1]
-        print(f"Downloading {file_name} from {file_url}")
-        file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'voices', file_name)
-        with open(f'{file_path}', 'wb') as f: f.write(requests.get(file_url).content)
+for repo, folder in repos.items():
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), folder)
+    os.makedirs(path, exist_ok=True)
+    all_files = HfApi().list_repo_files(repo)
 
-# Get all .pt file (VOICES)
-response = requests.get('https://huggingface.co/hexgrad/Kokoro-82M/tree/main/voices')
-soup = BeautifulSoup(response.text, 'html.parser')
+    # Get all root .md files (DOCS)
+    for file in all_files:
+        if '/' in file or not file.endswith('.md'): continue
+        print(f"Downloading {repo}/{file}")
+        shutil.copyfile(hf_hub_download(repo_id=repo, filename=file), os.path.join(path, file))
 
-for link in soup.find_all('a', href=True):
-    if link['href'].endswith('.pt?download=true'):
-        file_url = f'https://huggingface.co{link["href"]}'
-        file_name = file_url[:-14].split('/')[-1]
-        print(f"Downloading {file_name} from {file_url}")
-        file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'voices', file_name)
-        with open(f'{file_path}', 'wb') as f: f.write(requests.get(file_url).content)
+    # Get all .pt files (VOICES) and convert them to .npy
+    for file in all_files:
+        if not file.startswith('voices/') or not file.endswith('.pt'): continue
+        print(f"Downloading {repo}/{file}")
+        voice_style = torch.load(hf_hub_download(repo_id=repo, filename=file), weights_only = False).numpy().astype(np.float32)
+        np.save(os.path.join(path, os.path.basename(file).replace('.pt', '.npy')), voice_style)
 
-path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'voices')
-
-# List all files
-print("---- ST LISTING FILES ----- ")
-for file in os.listdir(path): print("-", file)
-print("---- ED LISTING FILES ----- ")
-
-# Convert all voices
-for file in os.listdir(path):
-    if not file.endswith('.pt'): continue
-    try:
-        voice_style = torch.load(os.path.join(path, file), weights_only = False).numpy().astype(np.float32)
-        np.save(os.path.join(path, file).replace('.pt', '.npy'), voice_style)
-    except Exception as e:
-        print(f"Error processing {file}: {e}")
-
-# Delete old .pt files
-for file in os.listdir(path):
-    if file.endswith('.pt'): os.remove(os.path.join(path, file))
-
-# List all files
-print("---- ST LISTING FILES ----- ")
-for file in os.listdir(path): print("-", file)
-print("---- ED LISTING FILES ----- ")
+    # List all files
+    print("---- ST LISTING FILES ----- ")
+    for file in sorted(os.listdir(path)): print("-", file)
+    print("---- ED LISTING FILES ----- ")
