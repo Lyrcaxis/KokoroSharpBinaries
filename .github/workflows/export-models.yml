@@ -20,7 +20,7 @@ jobs:
               run: |
                   python -m pip install --upgrade pip
                   pip install torch --index-url https://download.pytorch.org/whl/cpu
-                  pip install numpy transformers loguru huggingface_hub attrs onnx onnxruntime
+                  pip install numpy transformers loguru huggingface_hub attrs onnx onnxruntime onnxconverter-common
 
             - name: Export both Kokoro models to ONNX
               run: |
