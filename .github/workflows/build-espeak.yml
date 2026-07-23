@@ -56,7 +56,7 @@ jobs:
             - name: Download all artifacts
               run: |
                   mkdir -p espeak
-                  for artifact in $(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts --jq '.artifacts[].name'); do
+                  for artifact in $(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts --jq '.artifacts[].name | select(startswith("binaries-"))'); do
                       echo "Downloading artifact: $artifact"
                       gh run download --name $artifact --dir ./espeak
                   done
