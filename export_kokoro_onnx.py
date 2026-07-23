@@ -63,6 +63,7 @@ for name, repo, voice, phonemes in models:
         session = ort.InferenceSession(file, providers=['CPUExecutionProvider'])
         audio = session.run(None, { 'tokens': tokens.numpy(), 'style': style.numpy(), 'speed': speed.numpy() })[0]
         print(f"{os.path.basename(file)}: {audio.shape[0] / 24000:.2f}s of audio, rms {np.sqrt(np.mean(audio ** 2)):.4f}", flush=True)
+        
         with wave.open(file.replace('.onnx', '.wav'), 'wb') as f:
             f.setnchannels(1), f.setsampwidth(2), f.setframerate(24000)
             f.writeframes((np.clip(audio, -1, 1) * 32767).astype(np.int16).tobytes())
